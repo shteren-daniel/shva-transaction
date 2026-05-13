@@ -1,8 +1,8 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using server.Data;
 using server.Repositories;
 using server.Services;
-using FluentValidation;
-using FluentValidation.AspNetCore;
 using server.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,7 +34,6 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 var app = builder.Build();
 
 app.UseCors("AllowFrontend");
-
 app.UseSwagger();
 app.UseSwaggerUI();
 
