@@ -1,203 +1,202 @@
-﻿import { CommonModule } from '@angular/common';
-import {
+﻿import {
   Component,
-  ChangeDetectorRef,
-  ElementRef,
-  ViewChild,
-  signal,
+  computed,
+  inject,
+  signal
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { TransactionService } from '../../services/transaction.service';
-import { Country, CountryService } from '../../services/country.service';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
-interface Transaction {
-  country: string;
-  time: string;
-  createdAt: Date;
-}
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+
+import { DomSanitizer, SafeHtml }
+from '@angular/platform-browser';
+
+import {
+  Country,
+  CountryService
+} from '../../services/country.service';
+import { TransactionStore } from '../../stores/transaction.store';
+import { TransactionFacade } from '../../facades/Transaction.acade';
+import { ErrorService } from '../../services/error.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule
+  ],
   templateUrl: './home.html',
-  styleUrls: ['./home.scss'],
+  styleUrls: ['./home.scss']
 })
 export class Home {
-  countries: Country[] = [];
-  countrySearch = '';
-  filteredCountries = this.countries;
-  dropdownOpen = false;
-  transactions = signal<Transaction[]>([]);
-  selectedCountry = 'IL';
-  selectedTime = '12:00';
 
-  loading = false;
-  errorMessage: string | null = null;
-  successMessage: string | null = null;
+  /* =====================================================
+     INJECT
+  ===================================================== */
 
-  @ViewChild('errorBox', { static: false })
-  errorBox?: ElementRef<HTMLDivElement>;
-  private notifTimer?: any;
+  private readonly countryService =
+    inject(CountryService);
 
-  constructor(
-    private transactionService: TransactionService,
-    private countryService: CountryService,
-    private cdr: ChangeDetectorRef,
-    private sanitizer: DomSanitizer,
-  ) {}
+  private readonly facade =
+    inject(TransactionFacade);
 
-  ngOnInit() {
-    this.countries = this.countryService.getCountriesLib();
-    this.filteredCountries = [...this.countries];
-    // this.countryService.getCountriesFromApi().subscribe({
-    //   next: (countries) => {
-    //     this.countries = countries;
-    // this.filteredCountries = [...this.countries];
-    //   },
-    //   error: () => {
-    //     this.showError('טעינת המדינות נכשלה');
-    //   },
-    // });
-  }
+  readonly errorService =
+    inject(ErrorService);
 
-  onCountrySearchChange(value: string) {
-    this.countrySearch = value;
+  private readonly sanitizer =
+    inject(DomSanitizer);
 
-    this.filteredCountries = this.countries.filter((c) =>
-      c.name.toLowerCase().includes(value.toLowerCase()),
+  readonly store =
+    inject(TransactionStore);
+
+  /* =====================================================
+     STATE
+  ===================================================== */
+
+  readonly countries =
+    signal<Country[]>([]);
+
+  readonly countrySearch =
+    signal('');
+
+  readonly dropdownOpen =
+    signal(false);
+
+  readonly selectedCountry =
+    signal('IL');
+
+  readonly selectedTime =
+    signal('12:00');
+
+  readonly loading =
+    signal(false);
+
+  /* =====================================================
+     COMPUTED
+  ===================================================== */
+
+  readonly filteredCountries = computed(() => {
+
+    const search =
+      this.countrySearch()
+        .toLowerCase()
+        .trim();
+
+    if (!search) {
+      return this.countries();
+    }
+
+    return this.countries().filter(c =>
+      c.name.toLowerCase().includes(search)
     );
+  });
 
-    this.dropdownOpen = true;
+  /* =====================================================
+     INIT
+  ===================================================== */
+
+  ngOnInit(): void {
+
+    this.countries.set(
+      this.countryService.getCountriesLib()
+    );
   }
 
-  highlightText(text: string, search: string): SafeHtml {
-    if (!search) return text;
+  /* =====================================================
+     DROPDOWN
+  ===================================================== */
 
-    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escaped})`, 'gi');
-
-    const result = text.replace(regex, `<mark>$1</mark>`);
-
-    return this.sanitizer.bypassSecurityTrustHtml(result);
+  openDropdown(): void {
+    this.dropdownOpen.set(true);
   }
 
-  openDropdown() {
-    this.dropdownOpen = true;
-  }
+  closeDropdown(): void {
 
-  closeDropdown() {
     setTimeout(() => {
-      this.dropdownOpen = false;
+      this.dropdownOpen.set(false);
     }, 150);
   }
 
-  onCountryChange() {
-    this.dismissError();
-    this.dismissSuccess();
+  selectCountry(country: Country): void {
+
+    this.selectedCountry.set(country.code);
+
+    this.countrySearch.set(country.name);
+
+    this.dropdownOpen.set(false);
+
+    this.errorService.clear();
   }
 
-  selectCountry(country: any) {
-    this.selectedCountry = country.code;
-    this.countrySearch = country.name;
-    this.dropdownOpen = false;
+  /* =====================================================
+     TIME
+  ===================================================== */
+
+  onTimeChange(value: string): void {
+
+    this.selectedTime.set(value);
+
+    this.errorService.clear();
   }
 
-  onTimeChange(value?: string) {
-    if (value) {
-      this.selectedTime = value;
-    }
+  /* =====================================================
+     SUBMIT
+  ===================================================== */
 
-    this.dismissError();
-    this.dismissSuccess();
-  }
+  onSubmit(): void {
 
-  private sanitizeErrorText(raw: string): string {
-    if (!raw) {
-      return '';
-    }
-    const stripped = raw
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    return stripped || raw;
-  }
+    this.loading.set(true);
 
-  private clearNotifTimer() {
-    if (this.notifTimer) {
-      clearTimeout(this.notifTimer);
-      this.notifTimer = undefined;
-    }
-  }
+    this.errorService.clear();
 
-  showError(message: string, autoHide = false, ms = 6000) {
-    this.clearNotifTimer();
-    this.errorMessage = message;
-    this.cdr.detectChanges();
+    this.facade.createTransaction(
+      this.selectedCountry(),
+      this.selectedTime()
+    )
+    .subscribe({
 
-    setTimeout(() => {
-      try {
-        this.errorBox?.nativeElement.focus();
-      } catch {
-        // ignore
+      next: () => {
+
+        this.loading.set(false);
+      },
+
+      error: () => {
+
+        this.loading.set(false);
       }
-    }, 50);
+    });
+  }
 
-    if (autoHide) {
-      this.notifTimer = setTimeout(() => this.dismissError(), ms);
+  /* =====================================================
+     HIGHLIGHT
+  ===================================================== */
+
+  highlightText(
+    text: string,
+    search: string
+  ): SafeHtml {
+
+    if (!search) {
+      return text;
     }
-  }
 
-  dismissError() {
-    this.clearNotifTimer();
-    this.errorMessage = null;
-    this.cdr.detectChanges();
-  }
+    const escaped =
+      search.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&'
+      );
 
-  showSuccess(message: string, autoHide = true, ms = 3000) {
-    this.clearNotifTimer();
-    this.successMessage = message;
-    this.cdr.detectChanges();
+    const regex =
+      new RegExp(`(${escaped})`, 'gi');
 
-    if (autoHide) {
-      this.notifTimer = setTimeout(() => this.dismissSuccess(), ms);
-    }
-  }
+    const result =
+      text.replace(
+        regex,
+        '<mark>$1</mark>'
+      );
 
-  dismissSuccess() {
-    this.clearNotifTimer();
-    this.successMessage = null;
-    this.cdr.detectChanges();
-  }
-
-  onSubmit() {
-    this.loading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
-    this.cdr.detectChanges();
-
-    this.transactionService
-      .insertTransaction(this.selectedCountry, this.selectedTime)
-      .subscribe({
-        next: () => {
-          this.loading = false;
-          this.transactions.update((current) => [
-            {
-              country: this.selectedCountry,
-              time: this.selectedTime,
-              createdAt: new Date(),
-            },
-            ...current,
-          ]);
-          this.showSuccess('נשלח בהצלחה');
-        },
-        error: (err) => {
-          this.loading = false;
-          const raw = err?.error || err?.message || 'שגיאה בשליחת הבקשה';
-          const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
-          this.showError(this.sanitizeErrorText(text), false);
-        },
-      });
+    return this.sanitizer
+      .bypassSecurityTrustHtml(result);
   }
 }

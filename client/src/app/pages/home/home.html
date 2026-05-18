@@ -1,93 +1,128 @@
 ﻿<div class="page">
   <div class="card">
+    <!-- HEADER -->
     <div class="header">
       <h1>שליחת טרנזקציה</h1>
       <p>בחר מדינה ושעה לביצוע פעולה</p>
     </div>
 
-    <!-- Country -->
+    <!-- COUNTRY -->
     <label>בחר מדינה</label>
 
     <div class="dropdown-wrapper">
       <input
         type="text"
-        [(ngModel)]="countrySearch"
-        (ngModelChange)="onCountrySearchChange($event)"
+        [ngModel]="countrySearch()"
+        (ngModelChange)="countrySearch.set($event)"
         (focus)="openDropdown()"
         (blur)="closeDropdown()"
         placeholder="חפש מדינה..."
       />
 
-      <div class="dropdown" [class.open]="dropdownOpen">
-        @for (c of filteredCountries; track c.code) {
-          <div class="dropdown-item" (click)="selectCountry(c)">
+      <div class="dropdown" [class.open]="dropdownOpen()">
+        @for (c of filteredCountries(); track c.code) {
+          <div class="dropdown-item" (mousedown)="selectCountry(c)">
             <span class="dot"></span>
-            <span>{{ c.name }}</span>
+
+            <span [innerHTML]="highlightText(c.name, countrySearch())"> </span>
           </div>
         }
       </div>
     </div>
 
-    <!-- Time -->
+    <!-- TIME -->
     <label>בחר שעה</label>
 
     <div class="time-wrapper">
       <input
         id="time"
         type="time"
-        [(ngModel)]="selectedTime"
+        [ngModel]="selectedTime()"
         (ngModelChange)="onTimeChange($event)"
       />
     </div>
 
-    <!-- Button -->
-    <button class="submit-btn" (click)="onSubmit()" [disabled]="loading">
-      {{ loading ? "שולח..." : "שלח טרנזקציה" }}
+    <!-- BUTTON -->
+    <button class="submit-btn" (click)="onSubmit()" [disabled]="loading()">
+      {{ loading() ? "שולח..." : "שלח טרנזקציה" }}
     </button>
 
-    <!-- Error -->
-    @if (errorMessage) {
-      <div class="notification error">
-        <span>⚠️</span>
+    <!-- ERRORS -->
+   @if (errorService.errors().length > 0) {
 
-        <div>
-          <div class="title">שגיאה</div>
-          <div class="msg">{{ errorMessage }}</div>
-        </div>
+  <div class="notification error">
 
-        <button (click)="dismissError()">✕</button>
+    <span>⚠️</span>
+
+    <div>
+
+      <div class="title">
+        שגיאה
       </div>
-    }
+
+      <ul>
+
+        @for (
+          err of errorService.errors();
+          track err
+        ) {
+
+          <li>{{ err }}</li>
+
+        }
+
+      </ul>
+
+    </div>
+
+    <button (click)="errorService.clear()">
+      ✕
+    </button>
+
+  </div>
+}
   </div>
 
-  <!-- Transactions -->
-  @if (transactions().length > 0) {
+  <!-- TRANSACTIONS -->
+  @if (store.transactions().length > 0) {
     <div class="transactions">
       <div class="transactions-header">
         <h2>טרנזקציות שאושרו</h2>
-        <span>{{ transactions().length }} פעולות</span>
+
+        <span>
+          {{ store.transactions().length }}
+          פעולות
+        </span>
       </div>
 
       <div class="grid">
-        @for (t of transactions(); track t.createdAt) {
+        @for (t of store.transactions(); track t.createdAt) {
           <div class="tx-card">
+            <!-- TOP -->
             <div class="tx-top">
               <div class="left">
-                <span class="badge">{{ t.country }}</span>
+                <span class="badge">
+                  {{ t.country }}
+                </span>
               </div>
 
               <div class="right">
-                <span class="time">{{ t.time }}</span>
+                <span class="time">
+                  {{ t.time }}
+                </span>
               </div>
             </div>
 
+            <!-- MIDDLE -->
             <div class="tx-middle">
               <div class="amount">
-                <span class="label">סטטוס</span>
-                <span class="value approved">מאושר</span>
+                <span class="label"> סטטוס </span>
+
+                <span class="value approved"> מאושר </span>
               </div>
             </div>
 
+            <!-- BOTTOM -->
             <div class="tx-bottom">
               <span class="date">
                 {{ t.createdAt | date: "dd/MM/yyyy HH:mm" }}
