@@ -1,1 +1,55 @@
-<p>home works!</p>
+﻿
+<div class="home-container">
+  <label for="country">בחר מדינה</label>
+  <select id="country" name="country" [(ngModel)]="selectedCountry" (ngModelChange)="onCountryChange()">
+    <option value="" disabled>-- בחר מדינה --</option>
+    <option *ngFor="let c of countries" [value]="c.code">{{ c.name }}</option>
+  </select>
+
+  <label for="time">בחר שעה</label>
+  <input id="time" type="time" [(ngModel)]="selectedTime" (ngModelChange)="onTimeChange($event)" />
+
+  <button class="submit-btn" (click)="onSubmit()" [disabled]="loading">
+    {{ loading ? 'שולח...' : 'שלח' }}
+  </button>
+
+  @if (errorMessage) {
+  <div  class="notification error" role="alert" aria-live="assertive" #errorBox tabindex="-1">
+    <div class="notif-row">
+      <div class="icon" aria-hidden="true">⚠️</div>
+      <div class="content">
+        <div class="title">שגיאה</div>
+        <div class="msg">{{ errorMessage }}</div>
+      </div>
+      <button class="close" (click)="dismissError()" aria-label="סגור הודעת שגיאה">✕</button>
+    </div>
+  </div>
+  }
+
+@if (transactions().length > 0) {
+  <div class="transactions-section">
+    <h2>טרנזקציות שאושרו</h2>
+
+    <div class="transactions-grid">
+      @for (transaction of transactions(); track transaction.createdAt) {
+        <div class="transaction-card">
+          <div class="row">
+            <span class="label">מדינה:</span>
+            <span>{{ transaction.country }}</span>
+          </div>
+
+          <div class="row">
+            <span class="label">שעה:</span>
+            <span>{{ transaction.time }}</span>
+          </div>
+
+          <div class="row">
+            <span class="label">נוצר:</span>
+            <span>{{ transaction.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+</div>

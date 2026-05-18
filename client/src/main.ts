@@ -1,7 +1,14 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
+import 'zone.js';
 import { Home } from './app/pages/home/home';
+import { provideHttpClient } from '@angular/common/http';
 
 
-bootstrapApplication(Home, appConfig)
-  .catch((err) => console.error(err));
+bootstrapApplication(Home, {
+  providers: [
+    provideHttpClient()
+  ]
+});
+
+
+  
