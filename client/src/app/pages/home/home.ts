@@ -18,6 +18,7 @@ import {
 import { TransactionStore } from '../../stores/transaction.store';
 import { TransactionFacade } from '../../facades/Transaction.acade';
 import { ErrorService } from '../../services/error.service';
+import { CountryFacade } from '../../facades/country.facade';
 
 @Component({
   selector: 'app-home',
@@ -35,10 +36,10 @@ export class Home {
      INJECT
   ===================================================== */
 
-  private readonly countryService =
-    inject(CountryService);
+  private readonly countryFacade =
+    inject(CountryFacade);
 
-  private readonly facade =
+  private readonly transactionFacade =
     inject(TransactionFacade);
 
   readonly errorService =
@@ -54,8 +55,7 @@ export class Home {
      STATE
   ===================================================== */
 
-  readonly countries =
-    signal<Country[]>([]);
+  readonly countries = this.countryFacade.countries;
 
   readonly countrySearch =
     signal('');
@@ -92,16 +92,9 @@ export class Home {
     );
   });
 
-  /* =====================================================
-     INIT
-  ===================================================== */
-
-  ngOnInit(): void {
-
-    this.countries.set(
-      this.countryService.getCountriesLib()
-    );
-  }
+  ngOnInit() {
+  this.countryFacade.loadCountries();
+}
 
   /* =====================================================
      DROPDOWN
@@ -150,7 +143,7 @@ export class Home {
 
     this.errorService.clear();
 
-    this.facade.createTransaction(
+    this.transactionFacade.createTransaction(
       this.selectedCountry(),
       this.selectedTime()
     )
