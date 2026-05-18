@@ -8,7 +8,7 @@
   },
   "include": [
     "src/**/*.ts"
-  ],
+, "src/app/models/domain/transaction.model"  ],
   "exclude": [
     "src/**/*.spec.ts"
   ]

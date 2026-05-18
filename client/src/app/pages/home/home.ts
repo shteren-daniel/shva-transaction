@@ -4,11 +4,12 @@ import {
   ChangeDetectorRef,
   ElementRef,
   ViewChild,
-  signal
+  signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TransactionService } from '../../services/transaction.service';
-
+import { Country, CountryService } from '../../services/country.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface Transaction {
   country: string;
@@ -24,15 +25,10 @@ interface Transaction {
   styleUrls: ['./home.scss'],
 })
 export class Home {
-  countries = [
-    { code: 'US', name: 'United States' },
-    { code: 'IL', name: 'Israel' },
-    { code: 'GB', name: 'United Kingdom' },
-    { code: 'FR', name: 'France' },
-    { code: 'DE', name: 'Germany' },
-    { code: 'IN', name: 'India' },
-  ];
-
+  countries: Country[] = [];
+  countrySearch = '';
+  filteredCountries = this.countries;
+  dropdownOpen = false;
   transactions = signal<Transaction[]>([]);
   selectedCountry = 'IL';
   selectedTime = '12:00';
@@ -41,17 +37,71 @@ export class Home {
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
-  @ViewChild('errorBox', { static: false }) errorBox?: ElementRef<HTMLDivElement>;
+  @ViewChild('errorBox', { static: false })
+  errorBox?: ElementRef<HTMLDivElement>;
   private notifTimer?: any;
 
   constructor(
     private transactionService: TransactionService,
-    private cdr: ChangeDetectorRef
+    private countryService: CountryService,
+    private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
   ) {}
+
+  ngOnInit() {
+    this.countries = this.countryService.getCountriesLib();
+    this.filteredCountries = [...this.countries];
+    // this.countryService.getCountriesFromApi().subscribe({
+    //   next: (countries) => {
+    //     this.countries = countries;
+    // this.filteredCountries = [...this.countries];
+    //   },
+    //   error: () => {
+    //     this.showError('טעינת המדינות נכשלה');
+    //   },
+    // });
+  }
+
+  onCountrySearchChange(value: string) {
+    this.countrySearch = value;
+
+    this.filteredCountries = this.countries.filter((c) =>
+      c.name.toLowerCase().includes(value.toLowerCase()),
+    );
+
+    this.dropdownOpen = true;
+  }
+
+  highlightText(text: string, search: string): SafeHtml {
+    if (!search) return text;
+
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+
+    const result = text.replace(regex, `<mark>$1</mark>`);
+
+    return this.sanitizer.bypassSecurityTrustHtml(result);
+  }
+
+  openDropdown() {
+    this.dropdownOpen = true;
+  }
+
+  closeDropdown() {
+    setTimeout(() => {
+      this.dropdownOpen = false;
+    }, 150);
+  }
 
   onCountryChange() {
     this.dismissError();
     this.dismissSuccess();
+  }
+
+  selectCountry(country: any) {
+    this.selectedCountry = country.code;
+    this.countrySearch = country.name;
+    this.dropdownOpen = false;
   }
 
   onTimeChange(value?: string) {
@@ -67,7 +117,10 @@ export class Home {
     if (!raw) {
       return '';
     }
-    const stripped = raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const stripped = raw
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     return stripped || raw;
   }
 
@@ -124,25 +177,27 @@ export class Home {
     this.successMessage = null;
     this.cdr.detectChanges();
 
-    this.transactionService.insertTransaction(this.selectedCountry, this.selectedTime).subscribe({
-      next: () => {
-        this.loading = false;
-         this.transactions.update((current) => [
-    {
-      country: this.selectedCountry,
-      time: this.selectedTime,
-      createdAt: new Date(),
-    },
-    ...current,
-  ]);
-        this.showSuccess('נשלח בהצלחה');
-      },
-      error: (err) => {
-        this.loading = false;
-        const raw = err?.error || err?.message || 'שגיאה בשליחת הבקשה';
-        const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
-        this.showError(this.sanitizeErrorText(text), false);
-      },
-    });
+    this.transactionService
+      .insertTransaction(this.selectedCountry, this.selectedTime)
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          this.transactions.update((current) => [
+            {
+              country: this.selectedCountry,
+              time: this.selectedTime,
+              createdAt: new Date(),
+            },
+            ...current,
+          ]);
+          this.showSuccess('נשלח בהצלחה');
+        },
+        error: (err) => {
+          this.loading = false;
+          const raw = err?.error || err?.message || 'שגיאה בשליחת הבקשה';
+          const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+          this.showError(this.sanitizeErrorText(text), false);
+        },
+      });
   }
 }

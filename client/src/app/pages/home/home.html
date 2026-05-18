@@ -1,55 +1,101 @@
-﻿
-<div class="home-container">
-  <label for="country">בחר מדינה</label>
-  <select id="country" name="country" [(ngModel)]="selectedCountry" (ngModelChange)="onCountryChange()">
-    <option value="" disabled>-- בחר מדינה --</option>
-    <option *ngFor="let c of countries" [value]="c.code">{{ c.name }}</option>
-  </select>
+﻿<div class="page">
+  <div class="card">
+    <div class="header">
+      <h1>שליחת טרנזקציה</h1>
+      <p>בחר מדינה ושעה לביצוע פעולה</p>
+    </div>
 
-  <label for="time">בחר שעה</label>
-  <input id="time" type="time" [(ngModel)]="selectedTime" (ngModelChange)="onTimeChange($event)" />
+    <!-- Country -->
+    <label>בחר מדינה</label>
 
-  <button class="submit-btn" (click)="onSubmit()" [disabled]="loading">
-    {{ loading ? 'שולח...' : 'שלח' }}
-  </button>
+    <div class="dropdown-wrapper">
+      <input
+        type="text"
+        [(ngModel)]="countrySearch"
+        (ngModelChange)="onCountrySearchChange($event)"
+        (focus)="openDropdown()"
+        (blur)="closeDropdown()"
+        placeholder="חפש מדינה..."
+      />
 
-  @if (errorMessage) {
-  <div  class="notification error" role="alert" aria-live="assertive" #errorBox tabindex="-1">
-    <div class="notif-row">
-      <div class="icon" aria-hidden="true">⚠️</div>
-      <div class="content">
-        <div class="title">שגיאה</div>
-        <div class="msg">{{ errorMessage }}</div>
+      <div class="dropdown" [class.open]="dropdownOpen">
+        @for (c of filteredCountries; track c.code) {
+          <div class="dropdown-item" (click)="selectCountry(c)">
+            <span class="dot"></span>
+            <span>{{ c.name }}</span>
+          </div>
+        }
       </div>
-      <button class="close" (click)="dismissError()" aria-label="סגור הודעת שגיאה">✕</button>
     </div>
-  </div>
-  }
 
-@if (transactions().length > 0) {
-  <div class="transactions-section">
-    <h2>טרנזקציות שאושרו</h2>
+    <!-- Time -->
+    <label>בחר שעה</label>
 
-    <div class="transactions-grid">
-      @for (transaction of transactions(); track transaction.createdAt) {
-        <div class="transaction-card">
-          <div class="row">
-            <span class="label">מדינה:</span>
-            <span>{{ transaction.country }}</span>
-          </div>
+    <div class="time-wrapper">
+      <input
+        id="time"
+        type="time"
+        [(ngModel)]="selectedTime"
+        (ngModelChange)="onTimeChange($event)"
+      />
+    </div>
 
-          <div class="row">
-            <span class="label">שעה:</span>
-            <span>{{ transaction.time }}</span>
-          </div>
+    <!-- Button -->
+    <button class="submit-btn" (click)="onSubmit()" [disabled]="loading">
+      {{ loading ? "שולח..." : "שלח טרנזקציה" }}
+    </button>
 
-          <div class="row">
-            <span class="label">נוצר:</span>
-            <span>{{ transaction.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</span>
-          </div>
+    <!-- Error -->
+    @if (errorMessage) {
+      <div class="notification error">
+        <span>⚠️</span>
+
+        <div>
+          <div class="title">שגיאה</div>
+          <div class="msg">{{ errorMessage }}</div>
         </div>
-      }
-    </div>
+
+        <button (click)="dismissError()">✕</button>
+      </div>
+    }
   </div>
-}
+
+  <!-- Transactions -->
+  @if (transactions().length > 0) {
+    <div class="transactions">
+      <div class="transactions-header">
+        <h2>טרנזקציות שאושרו</h2>
+        <span>{{ transactions().length }} פעולות</span>
+      </div>
+
+      <div class="grid">
+        @for (t of transactions(); track t.createdAt) {
+          <div class="tx-card">
+            <div class="tx-top">
+              <div class="left">
+                <span class="badge">{{ t.country }}</span>
+              </div>
+
+              <div class="right">
+                <span class="time">{{ t.time }}</span>
+              </div>
+            </div>
+
+            <div class="tx-middle">
+              <div class="amount">
+                <span class="label">סטטוס</span>
+                <span class="value approved">מאושר</span>
+              </div>
+            </div>
+
+            <div class="tx-bottom">
+              <span class="date">
+                {{ t.createdAt | date: "dd/MM/yyyy HH:mm" }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
 </div>
