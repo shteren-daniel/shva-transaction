@@ -16,10 +16,22 @@ public class CreateTransactionRequestValidator
             .NotEmpty()
             .WithMessage("Country is required.");
 
-        //RuleFor(x => x.ClientTimeUtc)
-        //    .NotEmpty()
-        //    .WithMessage("RequestedAtUtc is required.")
-        //    .LessThanOrEqualTo(DateTime.UtcNow.AddMinutes(1))
-        //    .WithMessage("RequestedAtUtc cannot be in the future.");
+        RuleFor(x => x.ClientTimeUtc)
+            .NotEmpty()
+            .Must(BeUtc)
+            .WithMessage("Time must be UTC")
+            .Must(NotBeInFuture)
+            .WithMessage("Time cannot be in the future")
+            .Must(BeWithinReasonableRange)
+            .WithMessage("Time is out of acceptable range");
     }
+
+    private bool BeUtc(DateTimeOffset dt)
+        => dt.Offset == TimeSpan.Zero;
+
+    private bool NotBeInFuture(DateTimeOffset dt)
+        => dt <= DateTimeOffset.UtcNow.AddSeconds(5);
+
+    private bool BeWithinReasonableRange(DateTimeOffset dt)
+        => dt >= DateTimeOffset.UtcNow.AddYears(-2);
 }
