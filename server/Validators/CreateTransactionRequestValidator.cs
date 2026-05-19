@@ -6,14 +6,6 @@ namespace server.Validators;
 public class CreateTransactionRequestValidator
     : AbstractValidator<TransactionRequest>
 {
-    private static readonly string[] SupportedCountries =
-    [
-        "Israel",
-        "France",
-        "USA",
-        "Japan"
-    ];
-
     public CreateTransactionRequestValidator()
     {
         RuleFor(x => x.Amount)
@@ -22,14 +14,12 @@ public class CreateTransactionRequestValidator
 
         RuleFor(x => x.Country)
             .NotEmpty()
-            .WithMessage("Country is required.")
-            .Must(country => SupportedCountries.Contains(country))
-            .WithMessage("Unsupported country.");
+            .WithMessage("Country is required.");
 
-        RuleFor(x => x.ClientTimeUtc)
-            .NotEmpty()
-            .WithMessage("RequestedAtUtc is required.")
-            .LessThanOrEqualTo(DateTime.UtcNow.AddMinutes(1))
-            .WithMessage("RequestedAtUtc cannot be in the future.");
+        //RuleFor(x => x.ClientTimeUtc)
+        //    .NotEmpty()
+        //    .WithMessage("RequestedAtUtc is required.")
+        //    .LessThanOrEqualTo(DateTime.UtcNow.AddMinutes(1))
+        //    .WithMessage("RequestedAtUtc cannot be in the future.");
     }
 }

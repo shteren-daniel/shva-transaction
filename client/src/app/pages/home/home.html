@@ -3,7 +3,6 @@
     <!-- HEADER -->
     <div class="header">
       <h1>שליחת טרנזקציה</h1>
-      <p>בחר מדינה ושעה לביצוע פעולה</p>
     </div>
 
     <!-- COUNTRY -->
@@ -24,7 +23,7 @@
           <div class="dropdown-item" (mousedown)="selectCountry(c)">
             <span class="dot"></span>
 
-            <span [innerHTML]="highlightText(c.name, countrySearch())"> </span>
+            <span [innerHTML]="highlightText(c.name, countrySearch())"></span>
           </div>
         }
       </div>
@@ -42,45 +41,50 @@
       />
     </div>
 
+    <!-- AMOUNT -->
+    <label>סכום</label>
+
+    <div class="amount-wrapper">
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        placeholder="הכנס סכום"
+        [ngModel]="amount()"
+        (ngModelChange)="amount.set($event)"
+      />
+    </div>
+
     <!-- BUTTON -->
     <button class="submit-btn" (click)="onSubmit()" [disabled]="loading()">
       {{ loading() ? "שולח..." : "שלח טרנזקציה" }}
     </button>
 
     <!-- ERRORS -->
-   @if (errorService.errors().length > 0) {
+    @if (errorService.errors().length > 0) {
+      <div class="notification error">
+        <span>⚠️</span>
 
-  <div class="notification error">
+        <div>
+          <div class="title">
+            שגיאה
+          </div>
 
-    <span>⚠️</span>
+          <ul>
+            @for (
+              err of errorService.errors();
+              track err
+            ) {
+              <li>{{ err }}</li>
+            }
+          </ul>
+        </div>
 
-    <div>
-
-      <div class="title">
-        שגיאה
+        <button (click)="errorService.clear()">
+          ✕
+        </button>
       </div>
-
-      <ul>
-
-        @for (
-          err of errorService.errors();
-          track err
-        ) {
-
-          <li>{{ err }}</li>
-
-        }
-
-      </ul>
-
-    </div>
-
-    <button (click)="errorService.clear()">
-      ✕
-    </button>
-
-  </div>
-}
+    }
   </div>
 
   <!-- TRANSACTIONS -->
@@ -116,9 +120,17 @@
             <!-- MIDDLE -->
             <div class="tx-middle">
               <div class="amount">
-                <span class="label"> סטטוס </span>
+                <span class="label">סטטוס</span>
 
-                <span class="value approved"> מאושר </span>
+                <span class="value approved">מאושר</span>
+              </div>
+
+              <div class="amount">
+                <span class="label">סכום</span>
+
+                <span class="value">
+                  {{ t.amount | number:'1.2-2' }} ₪
+                </span>
               </div>
             </div>
 

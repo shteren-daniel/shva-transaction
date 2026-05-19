@@ -8,17 +8,26 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { DomSanitizer, SafeHtml }
-from '@angular/platform-browser';
+import {
+  DomSanitizer,
+  SafeHtml
+} from '@angular/platform-browser';
 
 import {
   Country,
-  CountryService
 } from '../../services/country.service';
-import { TransactionStore } from '../../stores/transaction.store';
-import { TransactionFacade } from '../../facades/Transaction.acade';
-import { ErrorService } from '../../services/error.service';
-import { CountryFacade } from '../../facades/country.facade';
+
+import { TransactionStore }
+from '../../stores/transaction.store';
+
+import { TransactionFacade }
+from '../../facades/Transaction.facade';
+
+import { ErrorService }
+from '../../services/error.service';
+
+import { CountryFacade }
+from '../../facades/country.facade';
 
 @Component({
   selector: 'app-home',
@@ -55,7 +64,8 @@ export class Home {
      STATE
   ===================================================== */
 
-  readonly countries = this.countryFacade.countries;
+  readonly countries =
+    this.countryFacade.countries;
 
   readonly countrySearch =
     signal('');
@@ -68,6 +78,9 @@ export class Home {
 
   readonly selectedTime =
     signal('12:00');
+
+  readonly amount =
+    signal<number | null>(null);
 
   readonly loading =
     signal(false);
@@ -93,14 +106,16 @@ export class Home {
   });
 
   ngOnInit() {
-  this.countryFacade.loadCountries();
-}
+
+    this.countryFacade.loadCountries();
+  }
 
   /* =====================================================
      DROPDOWN
   ===================================================== */
 
   openDropdown(): void {
+
     this.dropdownOpen.set(true);
   }
 
@@ -134,6 +149,17 @@ export class Home {
   }
 
   /* =====================================================
+     AMOUNT
+  ===================================================== */
+
+  onAmountChange(value: string): void {
+
+    this.amount.set(Number(value));
+
+    this.errorService.clear();
+  }
+
+  /* =====================================================
      SUBMIT
   ===================================================== */
 
@@ -145,7 +171,8 @@ export class Home {
 
     this.transactionFacade.createTransaction(
       this.selectedCountry(),
-      this.selectedTime()
+      this.selectedTime(),
+      this.amount() ?? 0
     )
     .subscribe({
 

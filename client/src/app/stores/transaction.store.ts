@@ -6,6 +6,7 @@ import {
 export interface Transaction {
   country: string;
   time: string;
+  amount: number;
   createdAt: Date;
 }
 

@@ -15,13 +15,13 @@ public class TransactionService : ITransactionService
 
     public async Task<TransactionResponse> InsertTransactionAsync(TransactionRequest request)
     {
-        var approved = TimeZoneHelper.IsBankHours(request.Country, request.ClientTimeUtc);
+        var approved = TimeZoneHelper.IsBankHours(request.Country, request.ClientTimeUtc.DateTime);
 
         var tx = new Transaction
         {
             Amount = request.Amount,
             Country = request.Country,
-            RequestedAtUtc = request.ClientTimeUtc,
+            RequestedAtUtc = request.ClientTimeUtc.DateTime,
             Status = approved ? "Approved" : "Rejected"
         };
 
